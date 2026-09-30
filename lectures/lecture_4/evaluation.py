@@ -458,36 +458,36 @@ def evaluate(
             faith_chunks.append(ans.retrieved_chunks)
 
     # --- Faithfulness ---
-    if compute_faithfulness and faith_indices and client is not None:
-        use_ragas = _check_ragas()
+    # if compute_faithfulness and faith_indices and client is not None:
+    #     use_ragas = _check_ragas()
 
-        if use_ragas:
-            try:
-                scores = _compute_faithfulness_ragas(
-                    faith_questions, faith_answers, faith_contexts, client, model, max_workers
-                )
-                for idx, score in zip(faith_indices, scores):
-                    rows[idx]["faithfulness"] = score if not np.isnan(score) else 0.0
-            except Exception as exc:
-                logger.warning("RAGAS faithfulness failed (%s), falling back to manual", exc)
-                use_ragas = False
+    #     if use_ragas:
+    #         try:
+    #             scores = _compute_faithfulness_ragas(
+    #                 faith_questions, faith_answers, faith_contexts, client, model, max_workers
+    #             )
+    #             for idx, score in zip(faith_indices, scores):
+    #                 rows[idx]["faithfulness"] = score if not np.isnan(score) else 0.0
+    #         except Exception as exc:
+    #             logger.warning("RAGAS faithfulness failed (%s), falling back to manual", exc)
+    #             use_ragas = False
 
-        if not use_ragas:
-            from concurrent.futures import ThreadPoolExecutor, as_completed
+    #     if not use_ragas:
+    #         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-            def _faith_task(i: int) -> tuple[int, float]:
-                try:
-                    score = _compute_faithfulness_manual(faith_answers[i], faith_chunks[i], client, model)
-                    return faith_indices[i], score
-                except Exception as exc:
-                    logger.warning("Faithfulness failed for index %d: %s", faith_indices[i], exc)
-                    return faith_indices[i], 0.0
+    #         def _faith_task(i: int) -> tuple[int, float]:
+    #             try:
+    #                 score = _compute_faithfulness_manual(faith_answers[i], faith_chunks[i], client, model)
+    #                 return faith_indices[i], score
+    #             except Exception as exc:
+    #                 logger.warning("Faithfulness failed for index %d: %s", faith_indices[i], exc)
+    #                 return faith_indices[i], 0.0
 
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(_faith_task, i) for i in range(len(faith_indices))]
-                for future in tqdm(as_completed(futures), total=len(futures), desc="Faithfulness"):
-                    idx, score = future.result()
-                    rows[idx]["faithfulness"] = score
+    #         with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    #             futures = [executor.submit(_faith_task, i) for i in range(len(faith_indices))]
+    #             for future in tqdm(as_completed(futures), total=len(futures), desc="Faithfulness"):
+    #                 idx, score = future.result()
+    #                 rows[idx]["faithfulness"] = score
 
     # Заполняем NaN → 0.0
     df_result = pd.DataFrame(rows)

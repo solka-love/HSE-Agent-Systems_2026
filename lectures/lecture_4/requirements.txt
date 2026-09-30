@@ -1,0 +1,13 @@
+lancedb<0.20
+docling
+langchain-core
+langchain-text-splitters
+openai
+python-dotenv
+pandas
+openpyxl
+pydantic
+tqdm
+ragas
+langchain-openai
+nest-asyncio
